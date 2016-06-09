@@ -23,31 +23,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# This vagrantfile is used for building the procsim project through Jenkins. 
-# Boxes should be created and installed from the subdirectories. 
+# This vagrantfile is used for creating a Mac OS X El Capitain environment for 
+# building the procsim project
 
 Vagrant.configure("2") do |config|
+    with_gui = ENV.has_key?("WITH_GUI") ? ENV["WITH_GUI"] : false
 
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = 2048
-    vb.cpus = 2
-    
-    vb.gui = false
-  end
-  
-  # Define the four platforms
-  
-  config.vm.define "trusty", autostart: false do |trusty|
-    trusty.vm.box = "procsim/trusty"
-  end
+    config.vm.provider "virtualbox" do |vb|    
+        vb.gui = with_gui
+        if with_gui
+            vb.memory = 4096
+            vb.cpus = 4
+            vb.customize ["modifyvm", :id, "--vram", "128"]
+        end
+    end
+
+    # Disable the default synced folder, it's not supported on 'darwin' yet
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+
+    if ENV.has_key?("WORKSPACE")
+        config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~vagrant/workspace -> #{ENV["WORKSPACE"]}'"
+
+        config.vm.network "private_network", ip: "10.10.10.10"
+        config.vm.synced_folder ENV["WORKSPACE"], "/Users/vagrant/workspace",
+            id: "workspace-root",
+            :nfs => true,
+            :mount_options => ['nolock','vers=3','tcp','noatime','actimeo=1','resvport']
+    end
  
-  config.vm.define "osx", autostart: false do |osx|
-    osx.vm.box = "procsim/osx"
-  end
-
-  config.vm.define "win64", autostart: false do |trusty|
-    trusty.vm.box = "procsim/win64"
-  end
-
 end
-

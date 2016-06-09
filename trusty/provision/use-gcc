@@ -1,5 +1,4 @@
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
+#!/bin/bash
 
 # The MIT License (MIT)
 # 
@@ -23,31 +22,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# This vagrantfile is used for building the procsim project through Jenkins. 
-# Boxes should be created and installed from the subdirectories. 
+# Sets the alternatives for c++ and cc to use gcc-5
 
-Vagrant.configure("2") do |config|
+update-alternatives --set cc `which gcc-5`
+update-alternatives --set c++ `which g++-5`
 
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = 2048
-    vb.cpus = 2
-    
-    vb.gui = false
-  end
-  
-  # Define the four platforms
-  
-  config.vm.define "trusty", autostart: false do |trusty|
-    trusty.vm.box = "procsim/trusty"
-  end
- 
-  config.vm.define "osx", autostart: false do |osx|
-    osx.vm.box = "procsim/osx"
-  end
+echo "Set alternatives:"
+echo "$(which cc) -> $(readlink -f `which cc`)"
+echo "$(which c++) -> $(readlink -f `which c++`)"
 
-  config.vm.define "win64", autostart: false do |trusty|
-    trusty.vm.box = "procsim/win64"
-  end
-
-end
-
+export CC=$(which cc)
+export CXX=$(which cxx)

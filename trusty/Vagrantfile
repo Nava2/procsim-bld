@@ -1,0 +1,140 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# The MIT License (MIT)
+# 
+# Copyright (c) 2016 Kevin Brightwell
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# This vagrantfile is used for creating a ubuntu trusty environment for 
+# building the procsim project
+
+with_gui = ENV.has_key?("WITH_GUI") ? true : false
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/trusty64"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.cpus = 2
+    vb.memory = 2048
+    
+    vb.gui = with_gui
+    if with_gui
+      vb.cpus = 4
+      vb.memory = 4096
+      vb.customize ["modifyvm", :id, "--vram", "128"]
+    end
+  end
+
+  # Install/update prerequisite software:
+
+  config.vm.provision "shell", privileged: true, inline: <<-EOF
+    apt-get update -qq
+    apt-get install -qq -y python-software-properties software-properties-common
+    apt-get dist-upgrade -y -q 
+  EOF
+
+  config.vm.provision "shell", privileged: true, inline: <<-EOF
+    echo "Installing build prequisisites: git, ppa(s), python3"
+    apt-get install -q -y git 
+
+    apt-add-repository -y ppa:ubuntu-toolchain-r/test # Toolchains
+    apt-add-repository -y ppa:george-edison55/cmake-3.x
+    apt-add-repository -y ppa:beineri/opt-qt56-trusty
+    apt-add-repository -y ppa:adrozdoff/llvm-backport 
+    apt-get update -qq
+
+    apt-get install -y liblua5.2-dev libluajit-5.1-dev --no-install-recommends
+    apt-get install -qq -y python3
+    apt-get install -qq -y python3-pip
+  EOF
+
+  config.vm.provision "shell", privileged: true, inline: <<-EOF
+    echo "Installing build compiler toolchains: clang3.7 gcc-5"
+
+    apt-get install -q -y clang-3.7 \
+                          gcc-5 g++-5 \
+                          --force-yes
+  EOF
+
+  config.vm.provision "shell", privileged: true, inline: <<-EOF
+    echo "Installing build dependencies: pybars3, qt5, cmake, ninja, boost"
+    pip3 install pybars3
+    
+    apt-get install -q -y qt56base mesa-common-dev
+    echo 'source /opt/qt56/bin/qt56-env.sh' >> ~vagrant/.bashrc
+    
+    apt-get install -qq -y bash-completion --reinstall
+    apt-get install -qq -y cmake \
+                          cmake-data \
+                          ccache \
+                          ninja-build \
+                          libboost1.55-dev \
+                          libboost-filesystem1.55-dev \
+                          libboost-signals1.55-dev \
+                          --no-install-recommends
+  EOF
+  
+  config.vm.provision "shell", privileged: true, inline: <<-EOM
+    echo "Creating alternatives for clang and gcc"
+
+    update-alternatives --install /usr/bin/cc cc `which gcc-5` 30
+    update-alternatives --install /usr/bin/c++ c++ `which g++-5` 30
+    
+    update-alternatives --install /usr/bin/cc cc `which clang-3.7` 40
+    update-alternatives --install /usr/bin/c++ c++ `which clang++-3.7` 40
+  EOM
+
+  config.vm.provision "file", 
+      source: "./provision/use-clang", destination: "~vagrant/use-clang"
+  config.vm.provision "file", 
+      source: "./provision/use-gcc", destination: "~vagrant/use-gcc"
+
+  config.vm.provision "shell", privileged: true, inline: <<-EOM
+    # Make sure everyone can read and execute the scripts
+    chmod a+rx ~vagrant/use-gcc
+    chmod a+rx ~vagrant/use-clang
+    
+    # Move them into the PATH
+    mv ~vagrant/use-gcc    /usr/local/bin/
+    mv ~vagrant/use-clang  /usr/local/bin/
+  EOM
+  
+  if ENV.has_key?("WORKSPACE")
+    WORKSPACE = ENV["WORKSPACE"]
+    config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~vagrant/workspace -> #{WORKSPACE}'"
+    
+    config.vm.synced_folder WORKSPACE, "/home/vagrant/workspace"
+  end
+
+  if with_gui
+    config.vm.provision "shell", privileged: true, inline: <<-EOF 
+      apt-get install -y --no-install-recommends ubuntu-desktop 
+      apt-get install -y gnome-terminal \
+                        qt56creator \
+                        clang-format \ # We will likely need to see generated files
+                        unity-lens-applications \
+                        unity-lens-files
+    EOF
+  end
+
+  # Do this last since it's best to make sure everyone else is updated first
+  config.vm.provision "shell", privileged: true, inline: "apt-get dist-upgrade -y ; apt-get autoremove --purge -y"
+end # end vagrant file 

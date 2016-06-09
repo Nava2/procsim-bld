@@ -1,0 +1,73 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# The MIT License (MIT)
+# 
+# Copyright (c) 2016 Kevin Brightwell
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy 
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights 
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# This vagrantfile is used for creating a Mac OS X El Capitain environment for 
+# building the procsim project
+
+with_gui = ENV.has_key?("WITH_GUI") ? ENV["WITH_GUI"] : false
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "jhcook/osx-elcapitan-10.11"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.cpus = 2
+    vb.memory = 2048
+    
+    vb.gui = with_gui
+    if with_gui
+      vb.cpus = 4
+      vb.memory = 4096
+      vb.customize ["modifyvm", :id, "--vram", "128"]
+    end
+  end
+
+  # Install homebrew
+  config.vm.provision "shell", privileged: false, inline: <<-EOF 
+   # /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  EOF
+
+  # Install/update prerequisite software:
+  config.vm.provision "shell", privileged: false, inline: <<-EOM
+    brew update
+    brew upgrade
+
+    brew install boost cmake qt5 lua53
+    brew link qt5 --force
+  EOM
+
+  # Disable the default synced folder, it's not supported on 'darwin' yet
+#   config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  if ENV.has_key?("WORKSPACE")
+    config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~vagrant/workspace -> #{ENV["WORKSPACE"]}'"
+    config.vm.synced_folder ENV["WORKSPACE"], "/Users/vagrant/workspace",
+        id: "workspace-root",
+        :nfs => true,
+        :mount_options => ['nolock','vers=3','tcp','noatime','actimeo=1','resvport']
+  end
+
+  # Do this last since it's best to make sure everyone else is updated first
+  #config.vm.provision "shell", privileged: true, inline: "apt-get dist-upgrade -y ; apt-get autoremove --purge -y"
+end # end vagrant file 
