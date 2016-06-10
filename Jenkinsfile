@@ -2,8 +2,7 @@ node {
   checkout([$class: 'GitSCM', branches: [[name: '*']], 
     doGenerateSubmoduleConfigurations: false, 
     extensions: [[$class: 'SubmoduleOption', 
-        disableSubmodules: false, 
-        recursiveSubmodules: true], 
+        disableSubmodules: false], 
       [$class: 'MessageExclusion', 
         excludedMessage: '.*\\[(skip|ci)\\s+(skip|ci)\\].*']], 
     userRemoteConfigs: 
@@ -15,22 +14,18 @@ node {
   def ALL_OS = ['trusty', 'osx' ] // OS.Win64]
   def ALL_CONFIGS = ['Debug', 'Release']
 
-  checkout([$class: 'GitSCM', branches: [[name: '*']], 
+  checkout([$class: 'GitSCM', 
+    branches: [[name: 'origin/*']], 
     doGenerateSubmoduleConfigurations: false, 
-    extensions: [[$class: 'SubmoduleOption', 
-        disableSubmodules: false, 
-        recursiveSubmodules: true, 
-        reference: '', 
-        trackingSubmodules: false], 
-      [$class: 'RelativeTargetDirectory', 
-        relativeTargetDir: './${env.GIT_BRANCH}/'],
-      [$class: 'MessageExclusion', 
-        excludedMessage: '.*\\[(skip|ci)\\s+(skip|ci)\\].*']], 
-        submoduleCfg: [], 
-        userRemoteConfigs: 
-        [[credentialsId: '647b503d-a3fa-4c17-88dd-ef48276d5d92', 
-          url: 'git@github.com:Nava2/hc12sim.git']]])
-  
+    extensions: [[$class: 'RelativeTargetDirectory', 
+        relativeTargetDir: 'hc12sim'], 
+      [$class: 'PruneStaleBranch'], 
+      [$class: 'SubmoduleOption', 
+        disableSubmodules: true]], 
+    submoduleCfg: [], 
+    userRemoteConfigs: [[
+      credentialsId: '647b503d-a3fa-4c17-88dd-ef48276d5d92', 
+      url: 'git@github.com:Nava2/hc12sim.git']]])
 
   def buildTrusty = {
     CONFIGS.each { config -> 
