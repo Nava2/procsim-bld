@@ -12,18 +12,8 @@ node {
 
   def MASTER_WORKSPACE = env.WORKSPACE 
 
-  enum OS {
-      Trusty,
-      OSX,
-      Win64
-  }
-
-  enum Config {
-      Debug, Release 
-  }
-
-  def ALL_OS = [OS.Trusty, OS.OSX ] // OS.Win64]
-  def ALL_CONFIGS = [Config.Debug, Config.Release]
+  def ALL_OS = ['trusty', 'osx' ] // OS.Win64]
+  def ALL_CONFIGS = ['Debug', 'Release']
 
   checkout([$class: 'GitSCM', branches: [[name: '*']], 
     doGenerateSubmoduleConfigurations: false, 
@@ -42,7 +32,7 @@ node {
           url: 'git@github.com:Nava2/hc12sim.git']]])
   
 
-  def buildTrusty() {
+  def buildTrusty = {
     CONFIGS.each { config -> 
       ['clang', 'gcc'].each { compiler ->
         ws("os/${os}/compiler/${compiler}/config/${config}") {
@@ -74,12 +64,12 @@ node {
         }
 
         switch ( os ) {
-            case Trusty:
+            case 'trusty':
                 buildTrusty()
                 break;
-            case OSX:
+            case 'osx':
                 break;
-            case Win64:
+            case 'win64':
                 break;
         }
       } catch (err) {
