@@ -11,6 +11,16 @@ and can be utilized by develops as necessary.
 
 ## Boxes
 
+* xenial
+  Base Box: [`ubuntu/xenial64`](https://atlas.hashicorp.com/ubuntu/boxes/xenial64)
+  
+  Software:
+    * `clang-3.7`
+    * `gcc-5`
+    * `cmake`
+    * `ninja`
+    * `qt5`
+
 * trusty
   Base Box: [`ubuntu/trusty64`](https://atlas.hashicorp.com/ubuntu/boxes/trusty64)
   
@@ -21,6 +31,7 @@ and can be utilized by develops as necessary.
     * `ninja`
     * `qt5`
 
+
 * osx-fresh
   Base Box: [`jhcook/osx-elcapitan-10.11`](https://atlas.hashicorp.com/jhcook/boxes/osx-elcapitan-10.11)
   
@@ -30,6 +41,8 @@ and can be utilized by develops as necessary.
     * `qt5`
     * `xcode` CLI tools, no full installation
     * `brew`
+
+  The Version used within Jenkins has Xcode installed in full. 
 
 * osx-custom
   Base Box: [`AndrewDryga/vagrant-box-osx`](https://github.com/AndrewDryga/vagrant-box-osx). 

@@ -29,7 +29,7 @@
 with_gui = ENV.has_key?("WITH_GUI") ? true : false
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/trusty64"
+  config.vm.box = "ubuntu/xenial64"
 
   config.vm.provider "virtualbox" do |vb|
     vb.cpus = 2
@@ -47,7 +47,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision "shell", privileged: true, inline: <<-EOF
     apt-get update -qq
-    apt-get install -qq -y python-software-properties software-properties-common
     apt-get dist-upgrade -y -q 
   EOF
 
@@ -55,22 +54,15 @@ Vagrant.configure("2") do |config|
     echo "Installing build prequisisites: git, ppa(s), python3"
     apt-get install -q -y git 
 
-    apt-add-repository -y ppa:ubuntu-toolchain-r/test # Toolchains
-    apt-add-repository -y ppa:george-edison55/cmake-3.x
-    apt-add-repository -y ppa:beineri/opt-qt56-trusty
-    apt-add-repository -y ppa:adrozdoff/llvm-backport 
-    apt-get update -qq
-
     apt-get install -y liblua5.2-dev libluajit-5.1-dev --no-install-recommends
-    apt-get install -qq -y python3
     apt-get install -qq -y python3-pip
   EOF
 
   config.vm.provision "shell", privileged: true, inline: <<-EOF
-    echo "Installing build compiler toolchains: clang3.7 gcc-5"
+    echo "Installing build compiler toolchains: clang gcc-5"
 
-    apt-get install -q -y clang-3.7 \
-                          gcc-5 g++-5 \
+    apt-get install -q -y clang \
+                          gcc g++ \
                           --force-yes
   EOF
 
@@ -78,17 +70,15 @@ Vagrant.configure("2") do |config|
     echo "Installing build dependencies: pybars3, qt5, cmake, ninja, boost"
     pip3 install pybars3
     
-    apt-get install -q -y qt56base mesa-common-dev
-    echo 'source /opt/qt56/bin/qt56-env.sh' >> ~vagrant/.bashrc
+    apt-get install -q -y mesa-common-dev
     
     apt-get install -qq -y bash-completion --reinstall
-    apt-get install -qq -y cmake \
-                          cmake-data \
-                          ccache \
+    apt-get install -qq -y cmake qt5-default
+    apt-get install -qq -y ccache \
                           ninja-build \
-                          libboost1.55-dev \
-                          libboost-filesystem1.55-dev \
-                          libboost-signals1.55-dev \
+                          libboost1.58-dev \
+                          libboost-filesystem1.58-dev \
+                          libboost-signals1.58-dev \
                           --no-install-recommends
   EOF
   
@@ -98,41 +88,41 @@ Vagrant.configure("2") do |config|
     update-alternatives --install /usr/bin/cc cc `which gcc-5` 30
     update-alternatives --install /usr/bin/c++ c++ `which g++-5` 30
     
-    update-alternatives --install /usr/bin/cc cc `which clang-3.7` 40
-    update-alternatives --install /usr/bin/c++ c++ `which clang++-3.7` 40
+    update-alternatives --install /usr/bin/cc cc `which clang-3.8` 40
+    update-alternatives --install /usr/bin/c++ c++ `which clang++-3.8` 40
   EOM
 
   config.vm.provision "file", 
-      source: "./provision/use-clang", destination: "~vagrant/use-clang"
+      source: "./provision/use-clang", destination: "/tmp/use-clang"
   config.vm.provision "file", 
-      source: "./provision/use-gcc", destination: "~vagrant/use-gcc"
+      source: "./provision/use-gcc", destination: "/tmp/use-gcc"
 
   config.vm.provision "shell", privileged: true, inline: <<-EOM
     # Make sure everyone can read and execute the scripts
-    chmod a+rx ~vagrant/use-gcc
-    chmod a+rx ~vagrant/use-clang
+    chmod a+rx /tmp/use-gcc
+    chmod a+rx /tmp/use-clang
     
     # Move them into the PATH
-    mv ~vagrant/use-gcc    /usr/local/bin/
-    mv ~vagrant/use-clang  /usr/local/bin/
+    mv /tmp/use-gcc    /usr/local/bin/
+    mv /tmp/use-clang  /usr/local/bin/
   EOM
   
   if ENV.has_key?("WORKSPACE")
     WORKSPACE = ENV["WORKSPACE"]
-    config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~vagrant/workspace -> #{WORKSPACE}'"
+    config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~ubuntu/workspace -> #{WORKSPACE}'"
     
-    config.vm.synced_folder WORKSPACE, "/home/vagrant/workspace"
+    config.vm.synced_folder WORKSPACE, "/home/ubuntu/workspace"
   end
 
-  if with_gui
-    config.vm.provision "shell", privileged: true, inline: <<-EOF 
-      apt-get install -y --no-install-recommends ubuntu-desktop 
-      apt-get install -y gnome-terminal \
-                        qt56creator \
-                        unity-lens-applications \
-                        unity-lens-files
-    EOF
-  end
+  # if with_gui
+  #   config.vm.provision "shell", privileged: true, inline: <<-EOF 
+  #     apt-get install -y --no-install-recommends ubuntu-desktop 
+  #     apt-get install -y gnome-terminal \
+  #                       qt56creator \
+  #                       unity-lens-applications \
+  #                       unity-lens-files
+  #   EOF
+  # end
 
   # Do this last since it's best to make sure everyone else is updated first
   config.vm.provision "shell", privileged: true, inline: "apt-get dist-upgrade -y ; apt-get autoremove --purge -y"

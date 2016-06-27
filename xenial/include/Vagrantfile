@@ -23,18 +23,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# This vagrantfile is used for creating a Mac OS X El Capitain environment for 
+# This vagrantfile is used for creating a ubuntu trusty environment for 
 # building the procsim project
 
-with_gui = ENV.has_key?("WITH_GUI") ? ENV["WITH_GUI"] : false
-
 Vagrant.configure("2") do |config|
-  config.vm.box = "jhcook/osx-elcapitan-10.11"
 
-  config.vm.provider "virtualbox" do |vb|
-    vb.cpus = 2
-    vb.memory = 2048
-    
+  with_gui = ENV.has_key?("WITH_GUI") ? ENV["WITH_GUI"] : false
+
+  config.vm.provider "virtualbox" do |vb|    
     vb.gui = with_gui
     if with_gui
       vb.cpus = 4
@@ -43,31 +39,27 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  # Install homebrew
-  config.vm.provision "shell", privileged: false, inline: <<-EOF 
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-  EOF
-
-  # Install/update prerequisite software:
-  config.vm.provision "shell", privileged: false, inline: <<-EOM
-    brew update
-    brew upgrade
-
-    brew install boost cmake qt5 lua ninja
-    brew link qt5 --force
-  EOM
-
-  # Disable the default synced folder, it's not supported on 'darwin' yet
-  config.vm.synced_folder ".", "/vagrant", disabled: true
-
   if ENV.has_key?("WORKSPACE")
-    config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~vagrant/workspace -> #{ENV["WORKSPACE"]}'"
-    config.vm.synced_folder ENV["WORKSPACE"], "/Users/vagrant/workspace",
-        id: "workspace-root",
-        :nfs => true,
-        :mount_options => ['nolock','vers=3','tcp','noatime','actimeo=1','resvport']
+    WORKSPACE = ENV["WORKSPACE"]
+    config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~vagrant/workspace -> #{WORKSPACE}'"
+    
+    config.vm.synced_folder ENV["WORKSPACE"], "/home/vagrant/workspace"
   end
 
-  # Do this last since it's best to make sure everyone else is updated first
-  #config.vm.provision "shell", privileged: true, inline: "apt-get dist-upgrade -y ; apt-get autoremove --purge -y"
+  if with_gui
+    config.vm.provision "shell", privileged: true, inline: <<-EOF 
+      apt-get install -y --no-install-recommends ubuntu-desktop 
+      apt-get install -y gnome-terminal \
+                        qt56creator \
+                        clang-format \ # We will likely need to see generated files
+                        unity-lens-applications \
+                        unity-lens-files
+    EOF
+  end
+
+  # Clean-up dead packages, no need to keep them
+  config.vm.provision "shell", privileged: true, inline: <<-EOF
+    echo "Cleaning unneeded packages"
+    apt-get autoremove --purge -y
+  EOF
 end # end vagrant file 
