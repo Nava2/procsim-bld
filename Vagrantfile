@@ -41,8 +41,8 @@ Vagrant.configure("2") do |config|
     trusty.vm.box = "procsim/trusty"
   end
 
-  config.vm.define "xenial", autostart: false do |xenial|
-    xenial.vm.box = "procsim/xenial"
+  config.vm.define "wily", autostart: false do |wily|
+    wily.vm.box = "procsim/wily"
   end
  
   config.vm.define "osx", autostart: false do |osx|

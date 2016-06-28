@@ -11,8 +11,8 @@ and can be utilized by develops as necessary.
 
 ## Boxes
 
-* xenial
-  Base Box: [`ubuntu/xenial64`](https://atlas.hashicorp.com/ubuntu/boxes/xenial64)
+* wily
+  Base Box: [`ubuntu/wily64`](https://atlas.hashicorp.com/ubuntu/boxes/wily64)
   
   Software:
     * `clang-3.7`
