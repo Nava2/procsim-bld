@@ -29,7 +29,7 @@
 with_gui = ENV.has_key?("WITH_GUI") ? true : false
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/xenial64"
+  config.vm.box = "ubuntu/wily64"
 
   config.vm.provider "virtualbox" do |vb|
     vb.cpus = 2
@@ -45,21 +45,25 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.ssh.username = "ubuntu"
-  config.ssh.password = "ubuntu"
+  # config.ssh.username = "ubuntu"
+  # config.ssh.password = "ubuntu"
 
-  config.vm.provision "shell", privileged: true, inline: <<-EOF
-    useradd vagrant --password wthgG9Dxlk13E --home /home/vagrant --create-home -s /bin/bash
-    echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant
-    mkdir -p /home/vagrant/.ssh
-    wget --no-check-certificate https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub -O /home/vagrant/.ssh/authorized_keys
-    chmod 0700 /home/vagrant/.ssh
-    chmod 0600 /home/vagrant/.ssh/authorized_keys
-    chown -R vagrant /home/vagrant/.ssh
-  EOF
+  # config.vm.provision "shell", privileged: true, inline: <<-EOF
+  #   useradd vagrant --password wthgG9Dxlk13E --home /home/vagrant --create-home -s /bin/bash
+  #   echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant
+  #   mkdir -p /home/vagrant/.ssh
+  #   wget --no-check-certificate https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub -O /home/vagrant/.ssh/authorized_keys
+  #   chmod 0700 /home/vagrant/.ssh
+  #   chmod 0600 /home/vagrant/.ssh/authorized_keys
+  #   chown -R vagrant /home/vagrant/.ssh
+  # EOF
+
   # Install/update prerequisite software:
 
   config.vm.provision "shell", privileged: true, inline: <<-EOF
+    apt-add-repository ppa:george-edison55/cmake-3.x -y
+    wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+
     apt-get update -qq
     apt-get dist-upgrade -y -q 
   EOF
@@ -75,8 +79,9 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", privileged: true, inline: <<-EOF
     echo "Installing build compiler toolchains: clang gcc-5"
 
-    apt-get install -q -y clang \
-                          gcc g++ \
+    apt-get install -y clang-3.7 lldb-3.7
+
+    apt-get install -q -y gcc g++ \
                           --force-yes
   EOF
 
@@ -102,8 +107,8 @@ Vagrant.configure("2") do |config|
     update-alternatives --install /usr/bin/cc cc `which gcc-5` 30
     update-alternatives --install /usr/bin/c++ c++ `which g++-5` 30
     
-    update-alternatives --install /usr/bin/cc cc `which clang-3.8` 40
-    update-alternatives --install /usr/bin/c++ c++ `which clang++-3.8` 40
+    update-alternatives --install /usr/bin/cc cc `which clang-3.7` 40
+    update-alternatives --install /usr/bin/c++ c++ `which clang++-3.7` 40
   EOM
 
   config.vm.provision "file", 
@@ -123,9 +128,9 @@ Vagrant.configure("2") do |config|
   
   if ENV.has_key?("WORKSPACE")
     WORKSPACE = ENV["WORKSPACE"]
-    config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~ubuntu/workspace -> #{WORKSPACE}'"
+    config.vm.provision "shell", run: "always", inline: "echo 'Linking workspace: ~/workspace -> #{WORKSPACE}'"
     
-    config.vm.synced_folder WORKSPACE, "/home/ubuntu/workspace"
+    config.vm.synced_folder WORKSPACE, "/home/vagrant/workspace"
   end
 
   # if with_gui

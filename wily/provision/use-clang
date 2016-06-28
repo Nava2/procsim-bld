@@ -22,10 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Sets the alternatives for c++ and cc to use clang-3.8
+# Sets the alternatives for c++ and cc to use clang-3.7
 
-update-alternatives --set cc `which clang-3.8`
-update-alternatives --set c++ `which clang++-3.8`
+update-alternatives --set cc `which clang-3.7`
+update-alternatives --set c++ `which clang++-3.7`
 
 echo "Set alternatives:"
 echo "$(which cc) -> $(readlink -f `which cc`)"
