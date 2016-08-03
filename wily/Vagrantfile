@@ -26,37 +26,26 @@
 # This vagrantfile is used for creating a ubuntu trusty environment for 
 # building the procsim project
 
-with_gui = ENV.has_key?("WITH_GUI") ? true : false
-
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/wily64"
 
+  with_gui = ENV.has_key?("WITH_GUI") ? true : false
+
+  cpu_count = ENV.has_key?("CPUS") ? ENV["CPUS"] : (with_gui ? 4 : 2)
+  memory_count = ENV.has_key?("MEMORY") ? ENV["MEMORY"] :  (with_gui ? 4096 : 2048)
+
   config.vm.provider "virtualbox" do |vb|
-    vb.cpus = 2
-    vb.memory = 2048
+    
+    vb.cpus = cpu_count
+    vb.memory = memory_count
     
     vb.customize ["modifyvm", :id, "--uartmode1", "file", "procsim-xenial.log" ]
     
     vb.gui = with_gui
     if with_gui
-      vb.cpus = 4
-      vb.memory = 4096
       vb.customize ["modifyvm", :id, "--vram", "128"]
     end
   end
-
-  # config.ssh.username = "ubuntu"
-  # config.ssh.password = "ubuntu"
-
-  # config.vm.provision "shell", privileged: true, inline: <<-EOF
-  #   useradd vagrant --password wthgG9Dxlk13E --home /home/vagrant --create-home -s /bin/bash
-  #   echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant
-  #   mkdir -p /home/vagrant/.ssh
-  #   wget --no-check-certificate https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub -O /home/vagrant/.ssh/authorized_keys
-  #   chmod 0700 /home/vagrant/.ssh
-  #   chmod 0600 /home/vagrant/.ssh/authorized_keys
-  #   chown -R vagrant /home/vagrant/.ssh
-  # EOF
 
   # Install/update prerequisite software:
 
@@ -116,14 +105,25 @@ Vagrant.configure("2") do |config|
   config.vm.provision "file", 
       source: "./provision/use-gcc", destination: "/tmp/use-gcc"
 
+  config.vm.provision "file", 
+      source: "./provision/cmake-clang", destination: "/tmp/cmake-clang"
+  config.vm.provision "file", 
+      source: "./provision/cmake-gcc", destination: "/tmp/cmake-gcc"
+
   config.vm.provision "shell", privileged: true, inline: <<-EOM
     # Make sure everyone can read and execute the scripts
     chmod a+rx /tmp/use-gcc
     chmod a+rx /tmp/use-clang
+
+    chmod a+rx /tmp/cmake-gcc
+    chmod a+rx /tmp/cmake-clang
     
     # Move them into the PATH
     mv /tmp/use-gcc    /usr/local/bin/
     mv /tmp/use-clang  /usr/local/bin/
+
+    mv /tmp/cmake-gcc    /usr/local/bin/
+    mv /tmp/cmake-clang  /usr/local/bin/
   EOM
   
   if ENV.has_key?("WORKSPACE")

@@ -22,14 +22,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Sets the alternatives for c++ and cc to use gcc-5
+# Runs CMake using gcc for the $CC and $CXX variables
 
-update-alternatives --set cc `which gcc-5`
-update-alternatives --set c++ `which g++-5`
-
-echo "Set alternatives:"
-echo "$(which cc) -> $(readlink -f `which cc`)"
-echo "$(which c++) -> $(readlink -f `which c++`)"
-
-export CC=$(which cc)
-export CXX=$(which c++)
+CC=`which gcc-5` CXX=`which g++-5` cmake -GNinja $@

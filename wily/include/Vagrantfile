@@ -29,15 +29,19 @@
 Vagrant.configure("2") do |config|
 
   with_gui = ENV.has_key?("WITH_GUI") ? ENV["WITH_GUI"] : false
+  
+  cpu_count = ENV.has_key?("CPUS") ? ENV["CPUS"] : (with_gui ? 4 : 2)
+  memory_count = ENV.has_key?("MEMORY") ? ENV["MEMORY"] :  (with_gui ? 4096 : 2048)
 
   config.vm.provider "virtualbox" do |vb|    
     # This fixes problems with the log file created
     vb.customize ["modifyvm", :id, "--uartmode1", "file", "procsim-xenial.log" ]
 
+    vb.cpus = cpu_count
+    vb.memory = memory_count
+
     vb.gui = with_gui
     if with_gui
-      vb.cpus = 4
-      vb.memory = 4096
       vb.customize ["modifyvm", :id, "--vram", "128"]
     end
   end

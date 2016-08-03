@@ -32,4 +32,4 @@ echo "$(which cc) -> $(readlink -f `which cc`)"
 echo "$(which c++) -> $(readlink -f `which c++`)"
 
 export CC=$(which cc)
-export CXX=$(which cxx)
+export CXX=$(which c++)
