@@ -27,11 +27,15 @@
 # building the procsim project
 
 Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/wily64"
+  config.env.enable
 
   with_gui = ENV.has_key?("WITH_GUI") ? ENV["WITH_GUI"] : false
   
   cpu_count = ENV.has_key?("CPUS") ? ENV["CPUS"] : (with_gui ? 4 : 2)
   memory_count = ENV.has_key?("MEMORY") ? ENV["MEMORY"] :  (with_gui ? 4096 : 2048)
+
+  config.vm.provision "shell", run: "always", inline: "echo 'Provisioning: workspace=#{WORKSPACE} CPUS=#{cpu_count} MEMORY=#{memory_count}'"
 
   config.vm.provider "virtualbox" do |vb|    
     # This fixes problems with the log file created
