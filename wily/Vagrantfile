@@ -72,10 +72,10 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", privileged: true, inline: <<-EOF
     echo "Installing build compiler toolchains: clang gcc-5"
 
+    apt-get install -y valgrind
     apt-get install -y clang-3.7 lldb-3.7
 
-    apt-get install -q -y gcc g++ \
-                          --force-yes
+    apt-get install -q -y gcc g++ --force-yes
   EOF
 
   config.vm.provision "shell", privileged: true, inline: <<-EOF
@@ -85,11 +85,10 @@ Vagrant.configure("2") do |config|
     apt-get install -qq -y bash-completion --reinstall
     apt-get install -qq -y cmake
     apt-get install -qq -y ccache \
-                          ninja-build \
-                          libboost1.58-dev \
-                          libboost-filesystem1.58-dev \
-                          libboost-signals1.58-dev \
-                          --no-install-recommends
+                           ninja-build \
+                           libboost1.58-dev \
+                           libboost-signals1.58-dev \
+                           --no-install-recommends
   EOF
 
   if with_qt
@@ -143,15 +142,14 @@ Vagrant.configure("2") do |config|
     config.vm.synced_folder WORKSPACE, "/home/vagrant/workspace"
   end
 
-  # if with_gui
-  #   config.vm.provision "shell", privileged: true, inline: <<-EOF 
-  #     apt-get install -y --no-install-recommends ubuntu-desktop 
-  #     apt-get install -y gnome-terminal \
-  #                       qt56creator \
-  #                       unity-lens-applications \
-  #                       unity-lens-files
-  #   EOF
-  # end
+  if with_gui
+    config.vm.provision "shell", privileged: true, inline: <<-EOF 
+      apt-get install -y --no-install-recommends ubuntu-desktop 
+      apt-get install -y gnome-terminal \
+                         qtcreator \
+                         unity-lens-applications 
+    EOF
+  end
 
   # Do this last since it's best to make sure everyone else is updated first
   config.vm.provision "shell", privileged: true, inline: "apt-get dist-upgrade -y ; apt-get autoremove --purge -y"
